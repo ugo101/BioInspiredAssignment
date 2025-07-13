@@ -287,7 +287,7 @@ class ObstacleAvoidanceEnv(Env):
 
         k_goal = 3.0
         # for initial phase reduce k to 1 such that positive reward start becoming non zero at about 7m
-        k_goal = 5 # phase 2.0
+        # k_goal = 5 # phase 2.0
 
         composite_error = 4 * d + h + v # weight distance more to have steeper decay w.r.t distance error
         reward_goal = 1.0*np.exp(-k_goal * composite_error) # too large, overshadows the discrete goal bonus (agent prefers to not arrive at dock causing termination as can pickup more conitnuos goal rewards in long run)
@@ -335,7 +335,9 @@ class ObstacleAvoidanceEnv(Env):
         self.individual_rewards = {
             'dist_error': reward_dist,
             'goal_bonus': reward_goal,
-            'safety_reward': reward_safety
+            'safety_reward': reward_safety,
+            'crash_reward': reward_crash,
+            'discrete_reward_goal': reward_discrete_goal,
         }
 
         return reward
@@ -358,7 +360,7 @@ class ObstacleAvoidanceEnv(Env):
         d_pos = np.abs(np.linalg.norm(pose[:2] - self.goal_pose[:2]))
         d_yaw = np.abs(np.arctan2(np.sin(pose[2] - self.goal_pose[2]), np.cos(pose[2] - self.goal_pose[2])))
         vel = np.abs(np.linalg.norm(self.vessel.body_states.state_vector))
-        return d_pos < 0.2, d_yaw < np.deg2rad(5.0), vel < 0.05
+        return d_pos < 0.4, d_yaw < np.deg2rad(10.0), vel < 0.05
 
 
     def unnormalize_action(self, action):

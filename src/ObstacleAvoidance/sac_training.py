@@ -8,10 +8,10 @@ import os
 import sys
 import time
 
-path = '/Users/ugomunzi/Documents/Projects/BioInspiredAssignment/src'
+path = '/home/damenadmin/Projects/BioInspiredAssignment/src'
 sys.path.append(path)
 
-path = '/Users/ugomunzi/Documents/Projects/Thesis_v2/src'
+path = '/home/damenadmin/Projects/Thesis_v2p/src'
 sys.path.append(path)
 
 from SoftActorCritic.soft_actor_critic import SACAgent
@@ -199,7 +199,7 @@ def train(env,
 
             print(f"Episode {episode+1}: Reward = {episode_reward:.2f}")
 
-            if (episode + 1) % 20 == 0 and evaluate_throughout:
+            if (episode + 1) % 40 == 0 and evaluate_throughout:
                 if isinstance(env, NormalizeObservation):
                     print(f"Normalization stats: mean={env.running_mean}, var={env.running_var}, count={env.count}")
                 elif isinstance(env, FixedNormalizeObservation):
@@ -399,26 +399,25 @@ def compute_reward_for_pid_sample(env, state_vector):
 
 
 
-def evaluate(agent, env, fig_traj, ax_traj, fig_act, axs_act, fig_vel, axs_vel, fig_wind=None, ax_wind=None, fig_lookahead=None, ax_lookahead=None,
-             episodes=1, episode_id=None, t_total=None, goal_pose=None):
+def evaluate(agent, env, fig_traj, ax_traj, fig_act, axs_act, fig_vel, axs_vel,
+             fig_wind=None, ax_wind=None, fig_lookahead=None, ax_lookahead=None,
+             episodes=1, episode_id=None, t_total=None,
+             init_pose=None, goal_pose=None, safety_area_length=None,
+             safety_area_width=None, safety_area_offset=None, objects_list=None):
+
     for _ in range(episodes):
         # put a try here as sometimes, when generating safety area, it fails to generate single area containing both start and end pose
         try:
-            init_pose = np.array([0.0, 0.0, 0.0])
-            goal_pose = np.array([10.0, 0.0, 0.0])
-            dock_on_starboard = True
-            safety_area_length = 10.0
-            safety_area_width = 8.0
-            lateral_offset = 0.0
-            # set everything equal to None or phase 2 (ie randomise)
-            init_pose = None
-            goal_pose = None
-            dock_on_starboard = None
-            safety_area_length = None
-            safety_area_width = None
-            lateral_offset = None
-            # CHANGE BELOW WHEN DONE TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-            state, _ = env.reset(seed=None)
+            state, _ = env.reset(
+                seed=None,
+                init_pose=init_pose,
+                goal_pose=goal_pose,
+                safety_area_length=safety_area_length,
+                safety_area_width=safety_area_width,
+                safety_area_offset=safety_area_offset,
+                objects_list=objects_list
+            )
+
         except ValueError as e:
             print(f"[WARNING] Skipping evaluation episode due to environment reset error: {e}")
             continue
@@ -728,24 +727,26 @@ if __name__ == "__main__":
     device='cuda'
     # device = 'cpu' # for runpod.io
 
+    # normal, lr 1e-4, lr1e-2, nstep1 (back to normal lr), gamma 0.95 (back to normal lr and nstep), gamma 0.9, large nets
+
     
-    # below for macOS
-    if torch.backends.mps.is_available():
-        device = torch.device("mps")
-    else:
-        device = torch.device("cpu")
+    # # below for macOS
+    # if torch.backends.mps.is_available():
+    #     device = torch.device("mps")
+    # else:
+    #     device = torch.device("cpu")
 
     print(f"Using device: {device}")
     # save_path='src/DPController/Models/StaticSetpointRegulation'
     # note: this one below trained with slightly different reward (heading now applied same as velocity) i.e. only at goal pose
     # NOTE: '/home/damenadmin/Projects/SoftActorCritic/src/DPController/Models/StaticSetpointRegulation_v1_changed_reward' has heading reward active only when close to goal pose, doesnt seem to work well (vessel reaches goal but conituosly rotates quickly)
-    save_path = '/Users/ugomunzi/Documents/Projects/BioInspiredAssignment/src/ObstacleAvoidance/Models/phase_2'
+    save_path = '/home/damenadmin/Projects/BioInspiredAssignment/src/ObstacleAvoidance/Models/phase_1_large_nets'
     # log_path = '/home/damenadmin/Projects/SoftActorCritic/src/DPController/runs' # for tensorboard logging
-    log_path = '/Users/ugomunzi/Documents/Projects/BioInspiredAssignment/src/ObstacleAvoidance/runs'
+    log_path = '/home/damenadmin/Projects/BioInspiredAssignment/src/ObstacleAvoidance/runs'
     # log_path = None
 
     # load_path = '/home/damenadmin/Projects/SoftActorCritic/src/DPController/Models/StaticSetpointRegulation' # if not none, willl load model and start training based on saved model
-    load_path = '/Users/ugomunzi/Documents/Projects/BioInspiredAssignment/src/ObstacleAvoidance/Models/phase_1'
+    load_path = '/home/damenadmin/Projects/BioInspiredAssignment/src/ObstacleAvoidance/Models/phase_1'
     load_path = None
     # # Train the agent
     train(env,
